@@ -1,2 +1,5 @@
 .venv/
 ansible_collections/
+playbooks/roles/configure_lamp/lamp_dev/
+playbooks/roles/reverse_proxy/files/nginx-selfsigned.crt
+playbooks/roles/reverse_proxy/files/nginx-selfsigned.key

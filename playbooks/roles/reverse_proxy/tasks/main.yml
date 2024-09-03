@@ -3,7 +3,41 @@
 # Add tasks to configure nginx as a reverse proxy here
 # Add vhosts and other necessary files in the files/ and/or templates/ directories as appropriate
 # Use handlers to restart nginx if necessary
+- name : Check if key exists
+  ansible.builtin.stat:
+    path: roles/reverse_proxy/files/nginx-selfsigned.key
+  register: key
 
-- name: Print message
-  ansible.builtin.debug:
-    msg: Please remove me
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA) 
+  community.crypto.openssl_privatekey:
+    path: roles/reverse_proxy/files/nginx-selfsigned.key
+    size: 4096
+  when: key.stat.exists == False
+
+
+- name : Update the status of the file
+  ansible.builtin.stat:
+    path: roles/reverse_proxy/files/nginx-selfsigned.key
+  register: key
+
+- name: Check if the certificate file exists
+  ansible.builtin.stat:
+    path:  roles/reverse_proxy/files/nginx-selfsigned.crt
+  register: certificate  
+
+
+- name: Generate a Certificate Signing Request 
+  community.crypto.x509_certificate:
+    path: roles/reverse_proxy/files/nginx-selfsigned.crt
+    privatekey_path: roles/reverse_proxy/files/nginx-selfsigned.key
+    provider: selfsigned
+  when:
+   - certificate.stat.exists == False
+   - key.stat.exists == True  
+
+- name: Copy Nginx configuration file
+  ansible.builtin.copy:
+    src: files/default
+    dest:  /etc/nginx/sites-available/default
+  notify: Restart nginx
+

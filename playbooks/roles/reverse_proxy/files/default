@@ -1,0 +1,28 @@
+#handles HTTP on port 80
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        #redirects http request to https
+        return 301 https://$host$request_uri;
+    }
+}
+
+#handle https on port 443 with ssl
+server {
+    listen 443 ssl;
+    server_name localhost;
+
+    #path for ssl certificate and private key 
+    ssl_certificate /home/deepika/interns-ansible-automation/playbooks/roles/reverse_proxy/files/nginx-selfsigned.crt;
+    ssl_certificate_key /home/deepika/interns-ansible-automation/playbooks/roles/reverse_proxy/files/nginx-selfsigned.key;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
