@@ -2,6 +2,67 @@
 # Add tasks to automate the steps done during weeks 5 and 6 here
 # Use the defaults/ and files/ directories too
 
-- name: Print message
-  ansible.builtin.debug:
-    msg: Please remove me
+- name: Check if the repository directory exists
+  ansible.builtin.stat:
+    path: "{{root}}lamp_dev/"
+  register: lamp_dev
+
+
+- name: Clone the GitHub repository
+  ansible.builtin.git:
+    repo: https://github.com/EdgeKing810/interns-docker-compose-lamp
+    dest: "{{root}}lamp_dev/"
+    version: master
+  when: lamp_dev.stat.exists == False
+
+- name: Copy Dockerfile
+  ansible.builtin.copy:
+    src: files/Dockerfile
+    dest: "{{root}}lamp_dev/bin/webserver/Dockerfile"
+
+- name: Copy docker-compose.yml
+  ansible.builtin.copy:
+    src: files/docker-compose.yml
+    dest: "{{root}}lamp_dev/docker-compose.yml"
+
+- name: Copy index.php
+  ansible.builtin.copy:
+    src: files/index.php
+    dest: "{{root}}lamp_dev/webroot/index.php"
+  when: lamp_dev.stat.exists
+
+- name: Check if .env file exists
+  ansible.builtin.stat:
+    path: "{{root}}lamp_dev/.env"
+  register: env_file_stat
+
+- name: Copy the .env.sample file
+  ansible.builtin.copy:
+    src: "{{root}}lamp_dev/.env.sample"
+    dest: "{{root}}lamp_dev/.env"
+  when: not env_file_stat.stat.exists
+
+- name: Delete the .env.sample file
+  ansible.builtin.file:
+    path: "{{root}}lamp_dev/.env.sample"
+    state: absent
+  when: not env_file_stat.stat.exists
+
+
+- name: Add environment variables to .env
+  ansible.builtin.lineinfile:
+    path: "{{root}}lamp_dev/.env"
+    line: "{{ item.key }}={{ item.value }}"
+    create: yes
+    regexp: "^{{ item.key }}="  
+  loop:
+    - { key: 'DB_USERNAME', value: '{{ db_USER }}' }
+    - { key: 'DB_PASSWORD', value: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters']) }}" }
+    - { key: 'DB_ROOT_PASSWORD', value: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters']) }}" }
+    - { key: 'DB_NAME', value: '{{ db_database }}' }
+
+
+- name: Run docker-compose to start services
+  ansible.builtin.command:
+    cmd: docker-compose up -d
+    chdir: "{{root}}lamp_dev/"

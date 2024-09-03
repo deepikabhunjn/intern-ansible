@@ -1,0 +1,3 @@
+root: roles/configure_lamp/
+db_USER : deepika
+db_database: database
