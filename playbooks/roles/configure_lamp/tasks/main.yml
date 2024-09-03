@@ -4,65 +4,66 @@
 
 - name: Check if the repository directory exists
   ansible.builtin.stat:
-    path: "{{root}}lamp_dev/"
-  register: lamp_dev
+    path: "{{root}}/"
+  register: repository
 
 
 - name: Clone the GitHub repository
   ansible.builtin.git:
     repo: https://github.com/EdgeKing810/interns-docker-compose-lamp
-    dest: "{{root}}lamp_dev/"
+    dest: "{{root}}/"
     version: master
-  when: lamp_dev.stat.exists == False
+  when: repository.stat.exists == False
 
 - name: Copy Dockerfile
   ansible.builtin.copy:
     src: files/Dockerfile
-    dest: "{{root}}lamp_dev/bin/webserver/Dockerfile"
+    dest: "{{root}}/bin/webserver/Dockerfile"
 
 - name: Copy docker-compose.yml
   ansible.builtin.copy:
     src: files/docker-compose.yml
-    dest: "{{root}}lamp_dev/docker-compose.yml"
+    dest: "{{root}}/docker-compose.yml"
 
-- name: Copy index.php
-  ansible.builtin.copy:
-    src: files/index.php
-    dest: "{{root}}lamp_dev/webroot/index.php"
-  when: lamp_dev.stat.exists
+- name: Modify the database connection line in index.php
+  ansible.builtin.lineinfile:
+    path: "{{ root }}/webroot/index.php"
+    regexp: '\$link = mysqli_connect\("mysql", "root", "tiger", null\);' 
+    line: "$link = mysqli_connect('mysql', '{{ db_USER }}', '{{ db_password }}', null);"
+
 
 - name: Check if .env file exists
   ansible.builtin.stat:
-    path: "{{root}}lamp_dev/.env"
+    path: "{{root}}/.env"
   register: env_file_stat
 
 - name: Copy the .env.sample file
   ansible.builtin.copy:
-    src: "{{root}}lamp_dev/.env.sample"
-    dest: "{{root}}lamp_dev/.env"
+    src: "{{root}}/.env.sample"
+    dest: "{{root}}/.env"
   when: not env_file_stat.stat.exists
 
 - name: Delete the .env.sample file
   ansible.builtin.file:
-    path: "{{root}}lamp_dev/.env.sample"
+    path: "{{root}}/.env.sample"
     state: absent
   when: not env_file_stat.stat.exists
 
 
 - name: Add environment variables to .env
   ansible.builtin.lineinfile:
-    path: "{{root}}lamp_dev/.env"
+    path: "{{root}}/.env"
     line: "{{ item.key }}={{ item.value }}"
     create: yes
     regexp: "^{{ item.key }}="  
   loop:
     - { key: 'DB_USERNAME', value: '{{ db_USER }}' }
-    - { key: 'DB_PASSWORD', value: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters']) }}" }
-    - { key: 'DB_ROOT_PASSWORD', value: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters']) }}" }
+    - { key: 'DB_PASSWORD', value: "{{ db_password }}" }
+    - { key: 'DB_ROOT_PASSWORD', value: "{{ db_rootpassword }}" }
     - { key: 'DB_NAME', value: '{{ db_database }}' }
 
 
 - name: Run docker-compose to start services
   ansible.builtin.command:
     cmd: docker-compose up -d
-    chdir: "{{root}}lamp_dev/"
+    chdir: "{{root}}/"
