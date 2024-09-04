@@ -15,8 +15,8 @@ server {
     server_name localhost;
 
     #path for ssl certificate and private key 
-    ssl_certificate /home/deepika/interns-ansible-automation/playbooks/roles/reverse_proxy/files/nginx-selfsigned.crt;
-    ssl_certificate_key /home/deepika/interns-ansible-automation/playbooks/roles/reverse_proxy/files/nginx-selfsigned.key;
+    ssl_certificate /etc/ssl/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/nginx-selfsigned.key;
 
     location / {
         proxy_pass http://localhost:8080;

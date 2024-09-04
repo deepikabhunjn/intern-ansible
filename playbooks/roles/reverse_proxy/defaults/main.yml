@@ -1,2 +1,2 @@
 dir: "roles/reverse_proxy/"
-ssl_dir: "roles/reverse_proxy/files"
+ssl_dir: "/etc/ssl/"
