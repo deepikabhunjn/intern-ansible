@@ -25,13 +25,6 @@
     src: files/docker-compose.yml
     dest: "{{root}}/docker-compose.yml"
 
-- name: Modify the database connection line in index.php
-  ansible.builtin.lineinfile:
-    path: "{{ root }}/webroot/index.php"
-    regexp: '\$link = mysqli_connect\("mysql", "root", "tiger", null\);' 
-    line: "$link = mysqli_connect('mysql', '{{ db_USER }}', '{{ db_password }}', null);"
-
-
 - name: Check if .env file exists
   ansible.builtin.stat:
     path: "{{root}}/.env"
@@ -63,7 +56,26 @@
     - { key: 'DB_NAME', value: '{{ db_database }}' }
 
 
+- name: Modify the database connection line in index.php
+  ansible.builtin.lineinfile:
+    path: "{{ root }}/webroot/index.php"
+    regexp: '\$link = mysqli_connect\("mysql", "root", "tiger", null\);' 
+    line: "$link = mysqli_connect('mysql', '{{ db_USER }}', '{{ db_password }}', null);"
+
 - name: Run docker-compose to start services
   ansible.builtin.command:
     cmd: docker-compose up -d
     chdir: "{{root}}/"
+
+
+
+
+
+
+
+
+
+
+
+
+
