@@ -1,5 +1,5 @@
 root: /interns-docker-compose-lamp
 db_USER : deepika
 db_database: database
-db_password: "{{lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters'])}}"
+db_password: "{{lookup('ansible.builtin.password', '/tmp/passwordfile', chars=['ascii_letters'])}}"
 db_rootpassword: "{{lookup('ansible.builtin.password', '/tmp/passwordfile_root', chars=['ascii_letters']) }}"
